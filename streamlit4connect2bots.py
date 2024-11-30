@@ -1,83 +1,84 @@
 import streamlit as st
 import numpy as np
-from easyAI import TwoPlayerGame, AI_Player, Negamax
 import time
 
-class GameController(TwoPlayerGame):
-    def __init__(self, players, board=None):
-        # Define the players
-        self.players = players
-        
-        # Define the configuration of the board
-        self.board = board if (board is not None) else (
-            np.array([[0 for _ in range(7)] for _ in range(6)]))
-        
-        # Define who starts the game 
+class ConnectFourGame:
+    def __init__(self):
+        self.board = np.zeros((6, 7), dtype=int)
         self.current_player = 1
-        
-        # Define the positions for checking win conditions
-        self.pos_dir = np.array([[[i, 0], [0, 1]] for i in range(6)] +
-                     [[[0, i], [1, 0]] for i in range(7)] +
-                     [[[i, 0], [1, 1]] for i in range(1, 3)] +
-                     [[[0, i], [1, 1]] for i in range(4)] +
-                     [[[i, 6], [1, -1]] for i in range(1, 3)] +
-                     [[[0, i], [1, -1]] for i in range(3, 7)])
-
-    def possible_moves(self):
-        return [i for i in range(7) if (self.board[:, i].min() == 0)]
 
     def make_move(self, column):
-        line = np.argmin(self.board[:, column] != 0)
-        self.board[line, column] = self.current_player
-
-    def win(self):
-        # Check for a win condition
-        for pos, direction in self.pos_dir:
-            streak = 0
-            while (0 <= pos[0] <= 5) and (0 <= pos[1] <= 6):
-                if self.board[pos[0], pos[1]] == 3 - self.current_player:
-                    streak += 1
-                    if streak == 4:
-                        return True
-                else:
-                    streak = 0
-                pos = pos + direction
+        for row in range(5, -1, -1):
+            if self.board[row, column] == 0:
+                self.board[row, column] = self.current_player
+                return True
         return False
 
-    def is_over(self):
-        return (self.board.min() > 0) or self.win()
+    def is_valid_move(self, column):
+        return self.board[0, column] == 0
 
-    def scoring(self):
-        return -100 if self.win() else 0
+    def get_valid_moves(self):
+        return [col for col in range(7) if self.is_valid_move(col)]
 
-def play_game(search_depth1, search_depth2):
-    # Define the algorithms that will be used
-    algo_neg1 = Negamax(search_depth1)
-    algo_neg2 = Negamax(search_depth2)
+    def check_win(self):
+        # Horizontal check
+        for row in range(6):
+            for col in range(4):
+                if (self.board[row, col] == self.board[row, col+1] == 
+                    self.board[row, col+2] == self.board[row, col+3] != 0):
+                    return True
 
-    # Start the game
-    game = GameController([AI_Player(algo_neg1), AI_Player(algo_neg2)])
-    
-    # Placeholder for game steps to visualize
-    game_steps = []
-    game_steps.append(game.board.copy())
+        # Vertical check
+        for row in range(3):
+            for col in range(7):
+                if (self.board[row, col] == self.board[row+1, col] == 
+                    self.board[row+2, col] == self.board[row+3, col] != 0):
+                    return True
 
-    # Play the game
-    while not game.is_over():
-        # Make a move
-        move = game.players[game.current_player - 1].play(game)
-        game.make_move(move)
+        # Diagonal checks
+        for row in range(3):
+            for col in range(4):
+                # Positive slope diagonal
+                if (self.board[row, col] == self.board[row+1, col+1] == 
+                    self.board[row+2, col+2] == self.board[row+3, col+3] != 0):
+                    return True
+                
+                # Negative slope diagonal
+                if (self.board[row+3, col] == self.board[row+2, col+1] == 
+                    self.board[row+1, col+2] == self.board[row, col+3] != 0):
+                    return True
+
+        return False
+
+    def is_draw(self):
+        return len(self.get_valid_moves()) == 0
+
+    def simple_ai_move(self, player):
+        # Simple AI that tries to block opponent or make winning move
+        valid_moves = self.get_valid_moves()
         
-        # Store board state after each move
-        game_steps.append(game.board.copy())
+        # Try to win
+        for move in valid_moves:
+            self.make_move(move)
+            if self.check_win():
+                self.board[self.board[:, move] != 0][0] = 0  # Undo move
+                return move
+            self.board[self.board[:, move] != 0][0] = 0  # Undo move
         
-        # Switch players
-        game.current_player = 3 - game.current_player
-
-    # Determine winner
-    winner = 3 - game.current_player if game.win() else 0
-
-    return game_steps, winner
+        # Try to block opponent
+        opponent = 3 - player
+        self.current_player = opponent
+        for move in valid_moves:
+            self.make_move(move)
+            if self.check_win():
+                self.board[self.board[:, move] != 0][0] = 0  # Undo move
+                self.current_player = player
+                return move
+            self.board[self.board[:, move] != 0][0] = 0  # Undo move
+        
+        self.current_player = player
+        # If no strategic move, choose random valid move
+        return np.random.choice(valid_moves)
 
 def visualize_board(board):
     """Create a visual representation of the board."""
@@ -95,19 +96,46 @@ def visualize_board(board):
     board_html += "</table>"
     return board_html
 
+def play_game(ai_depth1=3, ai_depth2=3):
+    game = ConnectFourGame()
+    game_steps = [game.board.copy()]
+    
+    while True:
+        # Player 1's turn
+        move = game.simple_ai_move(1)
+        game.make_move(move)
+        game_steps.append(game.board.copy())
+        
+        if game.check_win():
+            return game_steps, 1
+        
+        if game.is_draw():
+            return game_steps, 0
+        
+        # Player 2's turn
+        move = game.simple_ai_move(2)
+        game.make_move(move)
+        game_steps.append(game.board.copy())
+        
+        if game.check_win():
+            return game_steps, 2
+        
+        if game.is_draw():
+            return game_steps, 0
+
 def main():
     st.title("Connect Four AI Battle")
     
     # Sidebar for game configuration
     st.sidebar.header("Game Configuration")
-    search_depth1 = st.sidebar.slider("Player 1 Search Depth", 1, 10, 5)
-    search_depth2 = st.sidebar.slider("Player 2 Search Depth", 1, 10, 5)
+    ai_depth1 = st.sidebar.slider("Player 1 AI Complexity", 1, 5, 3)
+    ai_depth2 = st.sidebar.slider("Player 2 AI Complexity", 1, 5, 3)
     
     # Button to start the game
     if st.sidebar.button("Start Game"):
         # Run the game
         st.write("Game in progress...")
-        game_steps, winner = play_game(search_depth1, search_depth2)
+        game_steps, winner = play_game(ai_depth1, ai_depth2)
         
         # Visualize game progression
         st.header("Game Progression")
