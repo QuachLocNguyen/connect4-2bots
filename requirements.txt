@@ -1,3 +1,2 @@
 numpy
 easyAI
-easyAI.AI_Player
