@@ -110,9 +110,9 @@ def main():
             if game.lose():
                 game_over = True
                 if game.current_player == 1:
-                    st.write("Player 1 wins!")
+                    st.write("Player Negamax wins!")
                 else:
-                    st.write("Player 2 wins!")
+                    st.write("Player SSS wins!")
                 break
             
             # Switch players
