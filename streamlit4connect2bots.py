@@ -1,6 +1,6 @@
 import streamlit as st
 import numpy as np
-from easyAI import TwoPlayerGame, AI_Player, Negamax
+from easyAI import TwoPlayerGame, AI_Player, Negamax, SSS
 
 class ConnectFour(TwoPlayerGame):
     def __init__(self, players, board=None):
@@ -85,7 +85,7 @@ def main():
 
     # Create AI players
     ai_algo_1 = Negamax(search_depth)
-    ai_algo_2 = Negamax(search_depth)
+    ai_algo_2 = SSS(search_depth)
     game = ConnectFour([AI_Player(ai_algo_1), AI_Player(ai_algo_2)])
 
     # Game play button
