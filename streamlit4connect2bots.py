@@ -28,6 +28,9 @@ class ConnectFour(TwoPlayerGame):
     def scoring(self):
         return -100 if self.lose() else 0
 
+    def show(self):
+        st.markdown(render_board(self.board), unsafe_allow_html=True)
+
 def find_four(board, current_player):
     POS_DIR = np.array(
         [[[i, 0], [0, 1]] for i in range(6)]
@@ -100,7 +103,7 @@ def main():
             game.play()
             
             # Display current board state
-            st.markdown(render_board(game.board), unsafe_allow_html=True)
+            game.show()
             
             # Switch players
             game.current_player = 3 - game.current_player  # Toggle between 1 and 2
