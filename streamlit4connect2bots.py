@@ -29,10 +29,42 @@ class ConnectFour(TwoPlayerGame):
         return -100 if self.lose() else 0
 
 def find_four(board, current_player):
-    # (code omitted for brevity)
+    POS_DIR = np.array(
+        [[[i, 0], [0, 1]] for i in range(6)]
+        + [[[0, i], [1, 0]] for i in range(7)]
+        + [[[i, 0], [1, 1]] for i in range(1, 3)]
+        + [[[0, i], [1, 1]] for i in range(4)]
+        + [[[i, 6], [1, -1]] for i in range(1, 3)]
+        + [[[0, i], [1, -1]] for i in range(3, 7)]
+    )
+    
+    for pos, direction in POS_DIR:
+        streak = 0
+        while (0 <= pos[0] <= 5) and (0 <= pos[1] <= 6):
+            if board[pos[0], pos[1]] == current_player:
+                streak += 1
+                if streak == 4:
+                    return True
+            else:
+                streak = 0
+            pos = pos + direction
+    return False
 
 def render_board(board):
-    # (code omitted for brevity)
+    board_html = "<table style='border-collapse: collapse;'>"
+    for row in range(5, -1, -1):
+        board_html += "<tr>"
+        for col in range(7):
+            cell_color = "white"
+            if board[row][col] == 1:
+                cell_color = "red"
+            elif board[row][col] == 2:
+                cell_color = "yellow"
+            
+            board_html += f"<td style='border: 1px solid black; width: 50px; height: 50px; text-align: center; background-color: {cell_color};'></td>"
+        board_html += "</tr>"
+    board_html += "</table>"
+    return board_html
 
 def main():
     st.title("Connect Four AI Game")
