@@ -95,7 +95,8 @@ def main():
         game.current_player = 1
         
         # Run the game
-        while not game.is_over():
+        game_over = False
+        while not game_over:
             # Get the current AI player
             current_ai = game.players[game.current_player - 1]
             
@@ -105,13 +106,19 @@ def main():
             # Display current board state
             game.show()
             
+            # Check for win condition
+            if game.lose():
+                game_over = True
+                if game.current_player == 1:
+                    st.write("Player 1 wins!")
+                else:
+                    st.write("Player 2 wins!")
+                break
+            
             # Switch players
             game.current_player = 3 - game.current_player  # Toggle between 1 and 2
-        
-        # Determine and display game result
-        if game.lose():
-            st.write(f"Player {game.opponent_index} wins!")
-        else:
+
+        if not game_over:
             st.write("Draw! The board is full.")
 
 if __name__ == "__main__":
