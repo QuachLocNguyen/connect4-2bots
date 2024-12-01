@@ -7,10 +7,10 @@ class ConnectFourGame:
         self.board = np.zeros((6, 7), dtype=int)
         self.current_player = 1
 
-    def make_move(self, column):
+    def make_move(self, column, player):
         for row in range(5, -1, -1):
             if self.board[row, column] == 0:
-                self.board[row, column] = self.current_player
+                self.board[row, column] = player
                 return True
         return False
 
@@ -20,19 +20,19 @@ class ConnectFourGame:
     def get_valid_moves(self):
         return [col for col in range(7) if self.is_valid_move(col)]
 
-    def check_win(self):
+    def check_win(self, player):
         # Horizontal check
         for row in range(6):
             for col in range(4):
                 if (self.board[row, col] == self.board[row, col+1] == 
-                    self.board[row, col+2] == self.board[row, col+3] != 0):
+                    self.board[row, col+2] == self.board[row, col+3] == player):
                     return True
 
         # Vertical check
         for row in range(3):
             for col in range(7):
                 if (self.board[row, col] == self.board[row+1, col] == 
-                    self.board[row+2, col] == self.board[row+3, col] != 0):
+                    self.board[row+2, col] == self.board[row+3, col] == player):
                     return True
 
         # Diagonal checks
@@ -40,12 +40,12 @@ class ConnectFourGame:
             for col in range(4):
                 # Positive slope diagonal
                 if (self.board[row, col] == self.board[row+1, col+1] == 
-                    self.board[row+2, col+2] == self.board[row+3, col+3] != 0):
+                    self.board[row+2, col+2] == self.board[row+3, col+3] == player):
                     return True
                 
                 # Negative slope diagonal
                 if (self.board[row+3, col] == self.board[row+2, col+1] == 
-                    self.board[row+1, col+2] == self.board[row, col+3] != 0):
+                    self.board[row+1, col+2] == self.board[row, col+3] == player):
                     return True
 
         return False
@@ -59,24 +59,21 @@ class ConnectFourGame:
         
         # Try to win
         for move in valid_moves:
-            self.make_move(move)
-            if self.check_win():
+            if self.make_move(move, player):
+                if self.check_win(player):
+                    self.board[self.board[:, move] != 0][0] = 0  # Undo move
+                    return move
                 self.board[self.board[:, move] != 0][0] = 0  # Undo move
-                return move
-            self.board[self.board[:, move] != 0][0] = 0  # Undo move
         
         # Try to block opponent
         opponent = 3 - player
-        self.current_player = opponent
         for move in valid_moves:
-            self.make_move(move)
-            if self.check_win():
+            if self.make_move(move, opponent):
+                if self.check_win(opponent):
+                    self.board[self.board[:, move] != 0][0] = 0  # Undo move
+                    return move
                 self.board[self.board[:, move] != 0][0] = 0  # Undo move
-                self.current_player = player
-                return move
-            self.board[self.board[:, move] != 0][0] = 0  # Undo move
         
-        self.current_player = player
         # If no strategic move, choose random valid move
         return np.random.choice(valid_moves)
 
@@ -103,10 +100,10 @@ def play_game(ai_depth1=3, ai_depth2=3):
     while True:
         # Player 1's turn
         move = game.simple_ai_move(1)
-        game.make_move(move)
+        game.make_move(move, 1)
         game_steps.append(game.board.copy())
         
-        if game.check_win():
+        if game.check_win(1):
             return game_steps, 1
         
         if game.is_draw():
@@ -114,10 +111,10 @@ def play_game(ai_depth1=3, ai_depth2=3):
         
         # Player 2's turn
         move = game.simple_ai_move(2)
-        game.make_move(move)
+        game.make_move(move, 2)
         game_steps.append(game.board.copy())
         
-        if game.check_win():
+        if game.check_win(2):
             return game_steps, 2
         
         if game.is_draw():
