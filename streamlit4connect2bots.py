@@ -89,11 +89,17 @@ def main():
     if st.button("Play Game"):
         # Reset the game
         game.board = np.array([[0 for i in range(7)] for j in range(6)])
+        game.current_player = 1
         
         # Run the game
         while not game.is_over():
-            # Current player makes a move
-            move = game.players[game.current_player - 1].play(game)
+            # Get the current AI player
+            current_ai = game.players[game.current_player - 1]
+            
+            # Get move using get_move()
+            move = current_ai.get_move(game)
+            
+            # Play the move
             game.make_move(move)
             
             # Display current board state
